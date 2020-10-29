@@ -24,6 +24,21 @@ import logError from './log-error';
 import { readFile, isDir, isFile, stdout, stderr, isTruthy } from './utils';
 import camelCase from 'camelcase';
 
+// support baseurl for specifying absolute path
+const absolutePaths = opts => {
+	const { baseurl = './src' } = opts;
+	return {
+		resolveId: (importee, importer) => {
+			const resPath = resolve(baseurl, importee);
+			if (fs.existsSync(resPath)) {
+				if (/.js/.test(extname(resPath))) return resPath;
+				return resPath + '/index.js';
+			} else if (fs.existsSync(resPath + '.js')) return resPath + '.js';
+			return null;
+		},
+	};
+};
+
 const removeScope = name => name.replace(/^@.*\//, '');
 
 // Convert booleans and int define= values to literals.
@@ -518,6 +533,7 @@ function createConfig(options, entry, format, writeMeta) {
 			},
 			plugins: []
 				.concat(
+					absolutePaths({ baseurl: './src' }),
 					postcss({
 						plugins: [
 							autoprefixer(),
